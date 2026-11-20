@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% set nav_page = 'settings' %}
+{% block title %}抓文章与设置{% endblock %}
+{% block head %}
+<script defer src="/history-ui.js"></script>
+{% if busy %}<meta http-equiv="refresh" content="5;url=/settings">{% endif %}
+<style>
+.status-strip, .account-options {display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px}
+.status-strip {padding:9px 14px;background:#eaf2ec;border-radius:6px}
+.status-strip small {overflow-wrap:anywhere}
+.accounts-table {overflow-x:auto}
+.accounts-table table {width:100%;border-collapse:collapse;font-size:14px}
+.accounts-table th,.accounts-table td {text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+.accounts-table th {background:#f2f5f2;white-space:nowrap}
+.accounts-table tbody tr:last-child td {border:0}
+.accounts-table time {white-space:nowrap;font-variant-numeric:tabular-nums}
+.quick {font-size:13px;padding:4px 9px;white-space:nowrap}
+.inline-action {display:inline}
+.action-cards {display:grid;grid-template-columns:3fr 2fr;gap:12px;align-items:start;margin:12px 0}
+.action-cards section {margin:0;min-width:0}
+.action-cards p,.limits {font-size:14px;color:var(--muted)}
+.action-cards .fields {grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.limits {margin:5px 0 9px}
+.account-options {padding-bottom:8px}
+.new-account-row {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:end;margin-bottom:8px}
+.new-account-row label {margin:0}
+.new-account-row .remove-row {padding:6px 10px;line-height:1.45}
+@media(max-width:660px){.action-cards {grid-template-columns:1fr}.accounts-table th,.accounts-table td {padding:6px 4px}}
+#history-dialog {width:min(690px,calc(100% - 24px));max-height:85vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:clamp(14px,3vw,24px);color:var(--ink);margin:auto}
+#history-dialog:not([open]) {display:none}
+#history-dialog::backdrop {background:rgba(20,35,29,.38)}
+#history-dialog h2 {font-size:20px;margin:0 0 14px}
+#history-dialog table {width:100%;border-collapse:collapse;font-size:15px}
+#history-dialog th,#history-dialog td {text-align:left;padding:8px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+#history-dialog th {color:var(--muted);font-weight:500}
+#history-dialog .budget {margin:15px 0 4px}
+#history-dialog [data-short] {color:#8b500b}
+#history-dialog .tools {gap:8px 12px}#history-dialog .tools a {font-size:14px}
+.new-account-footer {display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}
+.manage-removed {margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.manage-removed > summary {color:var(--muted);font-size:14px}
+.manage-box {margin-top:8px;padding:10px 14px;background:#f9fbf9;border:1px solid var(--line);border-radius:6px}
+.manage-box > .muted {margin:0 0 8px;font-size:13px}
+.manage-list {margin:0;padding:0;list-style:none}
+.manage-row {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 2px;border-bottom:1px solid #e6eee8;font-size:14px}
+.manage-row:last-child {border-bottom:0;padding-bottom:2px}
+.manage-row span {overflow-wrap:anywhere}
+.danger-btn {color:#9e322e;border-color:#e2c4c3;background:#fff}
+.danger-btn:hover {background:#fdf2f2;border-color:#d49e9c}
+.archived-group {margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.archived-group > summary {font-size:13px;color:var(--muted)}
+.archived-group .manage-row {margin:0}
+</style>
+{% endblock %}
+{% macro token() %}<input type="hidden" name="csrf" value="{{ csrf }}">{% endmacro %}
+{% block body %}
+<h1>抓文章与设置</h1>
+<div class="status-strip" role="status">
+  <strong>余额 {{ money(state.balance) }}</strong>
+  <form class="inline-action" method="post" action="/balance/refresh">{{ token() }}
+    <button class="secondary quick" {% if busy or (official and not c.configured.key) %}disabled{% endif %}>{{ '刷新余额' if official else ('已充值，放行首请求刷新余额' if low or state.status=='paused' else '清空旧余额，放行首请求') }}</button>
+  </form>
+  <span>已存 {{ stats|sum(attribute='n') }} 篇</span>
+  {% if busy %}
+  <small>正在抓取{% if r.account %} {{ r.account }}{% endif %}{% if r.page %} 第 {{ r.page }} 页{% endif %}</small>
+  <form class="inline-action" method="post" action="/cancel">{{ token() }}<button class="secondary quick">停止抓取</button></form>
+  {% elif state.status == 'paused' %}
+  <small>上次抓取暂停 · {{ r.error or '可手动继续' }}</small>
+  {% elif r.added is defined %}
+  <small>上次新增 {{ r.added }} 篇{% if r.total_cost is defined and r.total_cost is not none %} · 花费 {{ money(r.total_cost) }}{% endif %}</small>
+  {% endif %}
+  {% if note %}<small>{{ note }}</small>{% endif %}
+  {% if not c.configured.key %}<small>请在下方填写 API Key</small>{% endif %}
+</div>
+<section>
+  <h2>公众号列表</h2>
+  <div class="accounts-table" role="region" aria-label="公众号列表" tabindex="0"><table>
+    <thead><tr><th scope="col">公众号</th><th scope="col">已存</th><th scope="col">文章日期</th><th scope="col">预计费用</th></tr></thead>
+    <tbody>
+    {% for a in stats if a.account_id in configured %}
+    <tr>
+      <td>{{ a.account_name }}{% if a.region and a.region not in a.account_name %} <small>（{{ a.region }}）</small>{% endif %}</td>
+      <td>{{ a.n }}</td>
+      <td>{% if a.oldest_post_at and a.latest_post_at %}<time>{{ fmt_ts(a.oldest_post_at)[:10] }}</time> 至 <time>{{ fmt_ts(a.latest_post_at)[:10] }}</time>{% else %}—{% endif %}</td>
+      <td>{% if a.n %}
+        {% if a.account_id in plans %}<span data-estimate="{{ a.account_id }}">{{ plans[a.account_id] }}</span>{% else %}—{% endif %}
+      {% elif a.account_id in configured %}
+        <form class="inline-action" method="post" action="/test">{{ token() }}
+          <input type="hidden" name="account" value="{{ a.account_id }}">
+          <button class="quick" {% if busy or not c.configured.key %}disabled{% endif %}>试拉 1 页</button>
+        </form> <small>{{ '参考 0.16 元/页' if official else '按接口实测计价' }}</small>
+      {% else %}—{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="4">可在下方添加公众号</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<div class="action-cards">
+  <section><h2>补抓历史</h2>
+    <form class="history-form" method="post" action="/history">{{ token() }}
+      <div class="fields">
+        <label>开始日期<input type="date" name="start" value="{{ form.start }}"></label>
+        <label>结束日期<input type="date" name="end" value="{{ form.end }}"></label>
+      </div>
+      <label><input type="checkbox" name="unlimited" {% if form.unlimited %}checked{% endif %}> 不限日期</label>
+      <details class="limits"><summary>页数与余额限制</summary><div class="fields">
+        <label>每号页数上限<input type="number" name="cap" min="0" required value="{{ form.cap }}"><small>0 表示不限页数</small></label>
+        <label>保留余额（元）<input type="number" name="floor" min="0" step="any" required value="{{ form.floor }}"></label>
+      </div></details>
+      <button {% if busy %}disabled{% endif %}>开始补抓</button> <small>确认后扣费</small><p role="alert" data-preview-error hidden></p>
+    </form>
+  </section>
+  <section><h2>更新最新</h2>
+    <p>仅更新已启用且验通的号</p>
+    <form method="post" action="/check">{{ token() }}
+      <button {% if busy or not c.configured.key or not can_update %}disabled{% endif %}>付费更新</button> <small>按实际调用计费</small>
+    </form>
+  </section>
+</div>
+<dialog id="history-dialog" aria-labelledby="history-period">
+<h2 id="history-period"></h2>
+<table><thead><tr><th scope="col">公众号</th><th scope="col">处理方式</th><th scope="col">预计费用</th></tr></thead><tbody></tbody></table>
+<p class="budget"><strong data-summary></strong></p>
+<p data-short hidden>余额不足，将在触及保留余额时自动保留断点暂停</p>
+<form action="/history/confirm" method="post" class="tools">{{ token() }}
+<input type="hidden" name="plan"><input type="hidden" name="force_ack"><span data-choices hidden></span>
+<button>确认开始抓取</button><button type="button" class="secondary" data-close>取消</button>
+<a data-details href="/history">查看详细选项 / 强制重拉 →</a>
+</form></dialog>
+<details class="panel" id="account-config">
+  <summary>API Key 与公众号配置</summary>
+  <form method="post" action="/accounts/remove" id="remove-account">{{ token() }}
+    <input type="hidden" name="ack" value="">
+  </form>
+  <form method="post" action="/settings">{{ token() }}
+    <input type="hidden" name="form_kind" value="simple_accounts">
+    <div class="fields">
+    {% for k, label in [('key', 'API Key'), ('verifycode', '附加码（选填）')] %}
+      <label>{{ label }}<input type="password" name="{{ k }}" autocomplete="new-password" placeholder="{{ '已保存，留空保留' if c.configured[k] else '尚未填写' }}"></label>
+    {% endfor %}
+    </div>
+    {% if c.accounts %}
+    <fieldset><legend>启用公众号</legend><div class="account-options">
+    {% for a in c.accounts %}
+      <input type="hidden" name="id_{{ loop.index0 }}" value="{{ a.id }}">
+      <label><input type="checkbox" name="enabled_{{ loop.index0 }}" {% if a.enabled %}checked{% endif %}> {{ a.name }}</label>
+    {% endfor %}
+    </div></fieldset>
+    {% endif %}
+    {% set i = c.accounts|length %}
+    <fieldset><legend>新增公众号</legend>
+      <div id="new-accounts" data-next-index="{{ i + 1 }}">
+        <div class="new-account-row">
+          <input aria-label="公众号全称或文章链接" name="name_{{ i }}" placeholder="输入公众号全称，或直接粘贴该号任意一篇微信文章链接">
+          <button type="button" class="secondary quick remove-row" aria-label="删除此行">×</button>
+        </div>
+      </div>
+      <div class="new-account-footer">
+        <button type="button" class="secondary quick" id="add-account-row">+ 再加一行</button>
+        <small>贴文章链接请选该号原创/首发文章，勿贴转载链接</small>
+      </div>
+    </fieldset>
+    <details class="limits"><summary>自定义接口地址（默认极致了）</summary>
+      <label>接口地址<input type="url" name="api_url" required value="{{ c.api_url }}"></label>
+    </details>
+    <button {% if busy %}disabled{% endif %}>保存设置</button>
+  </form>
+  <details id="manage-removed" class="manage-removed"><summary>移除与恢复公众号</summary>
+    <div class="manage-box">
+      <p class="muted">仅从监测配置中移除，历史文章与抓取进度会继续保留，随时可恢复。</p>
+      {% if c.accounts %}
+      <ul class="manage-list">
+      {% for a in c.accounts %}
+        <li class="manage-row">
+          <span>{{ a.name }}</span>
+          <button class="secondary quick danger-btn" form="remove-account" type="submit" name="account_id" data-account-name="{{ a.name }}" value="{{ a.id }}" aria-label="删除 {{ a.name }}">删除</button>
+        </li>
+      {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">当前无可移除的公众号。</p>
+      {% endif %}
+      {% if archived %}
+      <details class="archived-group" open><summary>已移除公众号（{{ archived|length }}）</summary>
+        <ul class="manage-list">
+        {% for a in archived %}
+          <li class="manage-row">
+            <span>{{ a.name }}</span>
+            <form class="inline-action" method="post" action="/accounts/restore">{{ token() }}
+              <button class="secondary quick" name="account_id" value="{{ a.id }}">恢复监测</button>
+            </form>
+          </li>
+        {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    </div>
+  </details>
+</details>
+{% endblock %}

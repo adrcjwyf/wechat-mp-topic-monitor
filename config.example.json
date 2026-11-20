@@ -1,0 +1,13 @@
+{
+  "provider": "dajiala",
+  "api_url": "https://www.dajiala.com/fbmain/monitor/v3/post_history",
+  "key": "",
+  "verifycode": "",
+  "accounts": [],
+  "interval_hours": 0,
+  "webhook": "",
+  "min_balance": "0.20",
+  "ai_base_url": "",
+  "ai_model": "",
+  "ai_api_key": ""
+}

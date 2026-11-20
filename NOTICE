@@ -1,0 +1,14 @@
+WeChat-MP-Topic-Monitor
+Copyright 2026 adrcjwyf
+Repository placeholder: https://github.com/adrcjwyf/wechat-mp-topic-monitor
+
+This distribution contains software originally developed by WeRSS contributors.
+Copyright (c) 2026 WeRSS contributors. Their MIT notice is reproduced in app/LICENSE.
+
+The project's additions and modifications are licensed under the Apache License,
+Version 2.0, reproduced in LICENSE. Redistributors should retain both notices.
+
+Portable distributions also include CPython and Python packages. CPython's
+license is in runtime/LICENSE.txt. Package-specific license files and metadata
+are included under runtime/Lib/site-packages.
+

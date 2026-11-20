@@ -1,0 +1,30 @@
+{% extends 'base.html' %}{% set nav_page='settings' %}
+{% block title %}补抓历史 · 详细选项{% endblock %}
+{% block head %}<script defer src="/history-ui.js"></script><style>
+.account-head,.choices,.plan-actions {display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px}
+.account-head h2 {margin:0;font-size:17px}.badge {background:#fff0d4;color:#784512;padding:2px 8px;border-radius:5px;font-size:13px}
+.metrics {margin:5px 0;color:var(--muted);font-size:14px}.choices {align-items:baseline}
+.choices label {display:inline-block;cursor:pointer}.choices small {display:block;margin-left:23px}
+.budget-warning {color:#8b500b}.plan-actions {margin-top:12px}
+</style>{% endblock %}
+{% block body %}
+<h1>补抓历史 · 详细选项</h1><p>{{ view.period }}</p>
+<form id="history-confirm" action="/history/confirm" method="post" data-balance="{{ view.balance or '' }}" data-floor="{{ view.floor }}">
+<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="plan" value="{{ plan }}">
+<input type="hidden" name="force_ack" value="">
+{% for row in view.rows %}{% set i=loop.index0 %}
+<section>
+<div class="account-head"><h2>{{ row.region }} · {{ row.name }}</h2>{% if row.badge %}<span class="badge">{{ row.badge }}</span>{% endif %}</div>
+{% if row.metrics %}<p class="metrics">{{ row.metrics }}</p>{% endif %}
+<div class="choices" role="radiogroup" aria-label="{{ row.name }}">
+{% for opt in row.choices %}
+<label><input type="radio" required name="choice_{{ i }}" value="{{ opt.key }}" data-cost="{{ opt.cost if opt.cost is not none else '' }}" {% if opt.repeat %}data-repeat{% endif %} {% if loop.first %}checked{% endif %}>
+{{ opt.label }} · {{ opt.price }}{% if opt.repeat %}<small>覆盖更新，保留补录正文</small>{% endif %}</label>
+{% endfor %}</div>
+</section>{% endfor %}
+<section aria-live="polite">
+<strong>合计<span data-total>{% if view.unknown and view.cost=='0.00' %}暂无法估算{% else %}约 {{ view.cost }} 元{% if view.unknown %}（另有 {{ view.unknown }} 个待估）{% endif %}{% endif %}</span> · 当前余额 {{ (view.balance+' 元') if view.balance is not none else '未知' }}</strong>
+<p class="budget-warning" data-short {% if not view.short %}hidden{% endif %}>余额不足，将在触及保留余额时自动保留断点暂停</p>
+</section><div class="plan-actions"><button>确认开始抓取</button><a class="secondary" href="/settings">返回设置</a></div>
+<noscript><p>调整选项后，合计仍显示默认方案。强制重拉请启用浏览器 JavaScript 再确认。</p></noscript>
+</form>{% endblock %}

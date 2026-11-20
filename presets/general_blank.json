@@ -1,0 +1,9 @@
+{
+  "name": "空白专题",
+  "prompt": "",
+  "include": [],
+  "maybe": [],
+  "exclude": [],
+  "regex": {"include": [], "maybe": [], "exclude": []},
+  "accounts": {}
+}

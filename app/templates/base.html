@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}{{ rules.name }}{% endblock %}</title>
+<style>
+* {box-sizing:border-box}
+:root {--ink:#1d332c;--green:#205c48;--line:#d5dfd9;--muted:#52675c}
+body {margin:0;background:#f5f7f5;color:var(--ink);font:16px/1.6 "Microsoft YaHei",system-ui,sans-serif}
+main {max-width:1040px;margin:auto;padding:20px clamp(12px,3vw,32px) 48px}
+nav {display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:9px}
+nav a {display:block;padding:8px 15px;text-decoration:none;color:var(--green);border-radius:5px}
+nav a:hover,.secondary:hover {background:#eaf1ed}
+nav a[aria-current=page] {background:var(--green);color:white;font-weight:650}
+h1 {font-size:clamp(24px,3.4vw,30px);margin:22px 0 14px;line-height:1.35}
+h2 {font-size:20px;margin:0 0 8px} h3 {margin:0;font-size:18px}
+p {margin:6px 0} small,.muted {color:var(--muted)}
+section,article,.panel {background:white;border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:12px 0}
+article {overflow-wrap:anywhere} article h2,article h3 {font-size:18px;line-height:1.5;margin:3px 0 6px}
+article h2 a,article h3 a {color:var(--ink);text-decoration:none} article h2 a:hover,article h3 a:hover {text-decoration:underline}
+.warn {background:#fff5e0;border-color:#d9bf88} a {color:var(--green);text-underline-offset:3px}
+input,select,button,textarea {font:inherit} label {display:block;margin:4px 0;font-size:15px}
+input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea {display:block;width:100%;min-width:0;border:1px solid #9cad9f;border-radius:5px;padding:6px 9px;background:white;color:var(--ink)}
+[hidden] {display:none!important}
+input[type=checkbox],input[type=radio] {accent-color:var(--green)}
+.grid,.fields {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:6px 18px}
+button,.secondary {display:inline-block;border:1px solid transparent;border-radius:5px;padding:7px 13px;line-height:1.45;cursor:pointer;font-weight:550}
+button {background:var(--green);color:white} button:disabled {background:#75847c;cursor:default}
+.secondary {background:#fff;color:var(--green);border-color:#becec4;text-decoration:none;font-size:14px}
+.tools,.filter-row {display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-row {align-items:end;gap:8px 12px}.filter-row label {flex:1 1 135px;min-width:0;margin:0}
+.tools {margin-top:12px}.filters {margin-bottom:16px}
+summary {cursor:pointer;font-weight:600}details[open]>summary {margin-bottom:8px}
+fieldset {border:1px solid var(--line);border-radius:6px;margin:12px 0;min-width:0}legend {padding:0 5px}
+pre {white-space:pre-wrap;overflow-wrap:anywhere}
+:focus-visible {outline:3px solid #ae7424;outline-offset:2px}
+@media(max-width:600px){nav a {font-size:14px;padding:7px 9px}section,article,.panel {padding:12px}.tools {gap:6px}}
+</style>
+{% block head %}{% endblock %}<script defer src="/alive.js"></script></head>
+<body><main><nav aria-label="主导航">
+{% for page,label in [('topic','筛选结果'),('all','全部文章'),('rules','关键词'),('settings','抓文章与设置')] %}
+<a href="/{{ page }}"{% if nav_page==page %} aria-current="page"{% endif %}>{{ label }}</a>
+{% endfor %}
+</nav>{% block body %}{% endblock %}<footer class="muted" style="margin-top:30px"><small>Powered by {{ project_name }} v{{ version }} · by {{ author }} · <a href="{{ repo_url }}" target="_blank" rel="noreferrer">GitHub</a></small></footer></main></body></html>

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% set nav_page='all' %}
+{% block title %}全部文章{% endblock %}
+{% block head %}<script defer src="/history-ui.js"></script>{% endblock %}{% block body %}
+<h1>全部文章</h1>
+{% include 'filter.html' %}
+{% set g=groups[0] %}
+<p class="muted">共 {{ g.total }} 篇</p>
+{% for item in g.rows %}
+<article id="entry-{{ item.row.review_id }}">
+<small>{% if item.row.region and item.row.region != item.row.account_name %}{{ item.row.region }} · {% endif %}{{ item.row.account_name }} · {{ item.row.publish_date }} · {{ item.decision[0] }}</small>
+<h2><a href="{{ item.link }}" target="_blank" rel="noreferrer">{{ item.row.title }}</a></h2>
+{% if item.row.summary %}<p>{{ item.row.summary }}</p>{% endif %}
+<small>{{ '已有正文' if item.row.coverage=='full' else '仅标题摘要' }} · <a data-open-article href="/articles/{{ item.row.review_id|urlencode }}?{{ article_query }}">详情/补录正文</a></small>
+</article>
+{% else %}<p>当前范围内没有文章。</p>{% endfor %}
+{% if g.pages>1 %}<p>{% if g.page>1 %}<a href="?{{ g.previous }}">上一页</a>{% endif %}　{{ g.page }}/{{ g.pages }}　{% if g.page<g.pages %}<a href="?{{ g.next }}">下一页</a>{% endif %}</p>{% endif %}
+{% endblock %}

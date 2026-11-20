@@ -1,0 +1,67 @@
+{% extends 'base.html' %}{% set nav_page='rules' %}
+{% block title %}关键词{% endblock %}
+{% block head %}
+<script defer src="/tags-ui.js"></script>
+<style>
+.rule-controls {border:0;padding:0;margin:0}
+.rule-top {display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px}
+.rule-top label {margin:0;font-weight:600}
+.rule-top #rule-name {flex:1 1 12em;width:auto}
+.rule-top button,.rule-add button {flex-shrink:0}
+.rule-group {border-top:1px solid var(--line);padding:10px 0}
+.rule-group:last-child {padding-bottom:0}
+.rule-group label {font-weight:600;margin:0 0 6px}
+.rule-add {display:flex;gap:6px;max-width:32em}
+.rule-chips {display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px;max-height:14em;overflow:auto;padding:2px}
+.rule-chips:empty,.rule-status:empty {display:none}
+.rule-chip {display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:1px 9px;border:1px solid #bdd7c8;border-radius:999px;background:#e9f5ec;color:#21563b;font-size:14px;overflow-wrap:anywhere}
+.rule-maybe .rule-chip {background:#fff3cd;border-color:#e5d195;color:#705112}
+.rule-exclude .rule-chip {background:#faeaea;border-color:#e2c3c3;color:#783333}
+.rule-account-groups .rule-chip {background:#eaf3fd;border-color:#bed2e8;color:#254f78}
+.rule-chip button {font:inherit;line-height:1;padding:4px;border:0;background:transparent;color:inherit}
+.rule-account {border-top:1px solid var(--line);padding:10px 0;scroll-margin-top:12px}
+.rule-account:last-child {padding-bottom:0}
+.rule-inherited {margin:6px 0 12px;padding-left:12px;border-left:2px solid var(--line);font-size:14px}
+.rule-inherited summary,.rule-status {color:var(--muted)}
+.rule-preview strong {display:block;margin:4px 0}
+.rule-status[data-error="true"] {color:#932e29;font-weight:600}
+</style>
+{% endblock %}
+{% block body %}
+<h1>关键词</h1>
+{% if note %}<p class="panel" role="status">{{ note }}</p>{% endif %}
+<form id="rule-form" method="post" action="/rules">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="revision" value="{{ rules_revision }}">
+  <input type="hidden" name="keywords" disabled>
+  <textarea hidden id="rule-initial">{{ rules | tojson }}</textarea>
+  <noscript><p>请启用 JavaScript 以编辑关键词。</p></noscript>
+  <fieldset class="rule-controls" disabled>
+    <div class="rule-top">
+      <label for="rule-name">专题名称</label>
+      <input id="rule-name" value="{{ rules.name }}" required maxlength="120">
+      <button type="submit">保存并重算</button>
+    </div>
+    <p class="rule-status" role="status" aria-live="polite"></p>
+    <section>
+      <h2>统一关键词</h2>
+      <div id="rule-global-groups"></div>
+    </section>
+    <section>
+      <h2>账号专属关键词</h2>
+      {% for a in c.accounts %}
+      <details class="rule-account" id="rule-account-{{ a.id }}" data-account-id="{{ a.id }}">
+        <summary>{{ a.name or a.id }}{% if a.region %} · {{ a.region }}{% endif %}</summary>
+        <details class="rule-inherited">
+          <summary>查看已继承的统一词（共 <span class="rule-count">{{ rules.include|length + rules.maybe|length + rules.exclude|length }}</span> 个）</summary>
+          <div class="rule-preview"></div>
+        </details>
+        <div class="rule-account-groups"></div>
+      </details>
+      {% else %}
+      <p class="muted">请先在<a href="/settings">设置</a>中添加公众号。</p>
+      {% endfor %}
+    </section>
+  </fieldset>
+</form>
+{% endblock %}

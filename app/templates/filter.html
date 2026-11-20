@@ -1,0 +1,15 @@
+<div class="panel filters">
+<form method="get" class="filter-row">
+<label>公众号<select name="account"><option value="">全部公众号</option>{% for region in regions %}<option {% if region==f.account %}selected{% endif %}>{{ region }}</option>{% endfor %}</select></label>
+<label>开始日期<input type="date" name="start" value="{{ f.start }}"></label>
+<label>结束日期<input type="date" name="end" value="{{ f.end }}"></label>
+{% if not topic %}<label>初筛结论<select name="decision"><option value="">全部档位</option>{% for tier in tiers %}<option value="{{ tier }}" {% if tier==f.get('decision') %}selected{% endif %}>{{ tier }}</option>{% endfor %}</select></label>{% endif %}
+<button>筛选</button></form>
+<div class="tools">
+{% if topic %}
+<a class="secondary" href="/ai-review.md?{{ scope_qs }}" download>导出 AI 复核稿（.md）</a>
+{% else %}
+<a class="secondary" href="/all.csv?{{ qs }}" download>导出 Excel（CSV）</a>
+<a class="secondary" href="/ai-all.md?{{ scope_qs }}" download>导出全量 AI 防漏稿（.md）</a>
+{% endif %}
+</div></div>

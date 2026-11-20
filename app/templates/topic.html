@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% set nav_page='topic' %}
+{% block title %}筛选结果（{{ rules.name }}）{% endblock %}
+{% block head %}<script defer src="/history-ui.js"></script><style>
+.tier {padding:0;overflow:hidden;margin:18px 0}
+.tier>h2 {background:#e8f3ec;border-left:5px solid #367251;padding:10px 14px;margin:0;font-size:19px}
+.tier.review>h2 {background:#fbf2dd;border-color:#ad832d}
+.tier>h2 small {font-size:14px;font-weight:500;margin-left:8px}
+.tier article {border:0;border-bottom:1px solid var(--line);border-radius:0;margin:0;padding:14px 18px}
+.tier article:last-child {border-bottom:0}.tier>p {margin:12px 18px}
+</style>{% endblock %}
+{% block body %}<h1>筛选结果（{{ rules.name }}）</h1>
+{% include 'filter.html' %}
+{% for g in groups %}
+<section class="tier{% if not loop.first %} review{% endif %}">
+<h2>{{ '明确入选' if loop.first else '疑似待核' }}<small>{{ g.total }} 篇</small></h2>
+{% for item in g.rows %}<article id="entry-{{ item.row.review_id }}">
+<small>{% if item.row.region and item.row.region != item.row.account_name %}{{ item.row.region }} · {% endif %}{{ item.row.account_name }} · {{ item.row.publish_date }}</small>
+<h3><a href="{{ item.link }}" target="_blank" rel="noreferrer">{{ item.row.title }}</a></h3>
+{% if item.row.excerpt %}<p>{{ item.row.excerpt }}</p>{% endif %}
+<small>{{ '已有正文' if item.row.coverage=='full' else '仅标题摘要' }} · <a data-open-article href="/articles/{{ item.row.review_id|urlencode }}?{{ article_query }}">详情/补录正文</a></small>
+</article>{% else %}<p class="muted">当前范围内没有此档文章。</p>{% endfor %}
+{% if g.pages>1 %}<p>{% if g.page>1 %}<a href="?{{ g.previous }}">上一页</a>{% endif %}　{{ g.page }}/{{ g.pages }}　{% if g.page<g.pages %}<a href="?{{ g.next }}">下一页</a>{% endif %}</p>{% endif %}
+</section>{% endfor %}{% endblock %}

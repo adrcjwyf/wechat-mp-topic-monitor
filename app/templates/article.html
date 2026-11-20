@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% set back=back|default('/all',true) %}{% set nav_page='topic' if back.startswith('/topic') else 'all' %}{% block title %}{{ row.title }}{% endblock %}{% block head %}<script defer src="/history-ui.js"></script>{% endblock %}{% block body %}
+<h1>{{ row.title }}</h1><p>{{ row.region }} · {{ row.account_name }} · {{ row.publish_date }}</p>
+{% if original %}<a href="{{ original }}" target="_blank" rel="noreferrer">打开微信原文</a>{% endif %}
+<section><strong>{{ row.decision }} · {{ row.category }}</strong><p>{{ row.reason }}</p>{% if row.summary %}<p>{{ row.summary }}</p>{% endif %}</section>
+<section><h2>补录正文</h2><p>从原文复制文字，粘贴后保存即可在本机重新筛选。</p>
+{% if note %}<p role="status"><strong>{{ note }}</strong></p>{% endif %}
+{% if draft is not none and row.content_text %}<details><summary>查看库中已保存的正文</summary><pre>{{ row.content_text }}</pre></details>{% endif %}
+<form method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="version" value="{{ version }}">
+<label>正文纯文本<textarea name="body" rows="14" maxlength="300000" required style="width:100%;font:inherit">{{ draft if draft is not none else row.content_text }}</textarea></label><div class="tools"><button>保存正文并重新筛选</button><a class="secondary" data-back-to-list href="{{ back }}">← 返回{{ "筛选结果" if nav_page=="topic" else "全部文章" }}</a></div></form></section>{% endblock %}
